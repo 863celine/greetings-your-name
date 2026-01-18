@@ -27,17 +27,41 @@
             gap: 2px;
         }
 
+        .greeting-line {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .icon-inline {
+            width: 20px;
+            height: 20px;
+            display: block;
+            margin: 0;
+            padding: 0;
+            object-fit: contain;
+        }
+
         .text-small {
             font-size: 0.85rem;
             font-weight: 300;
             margin: 0;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         #date {
             color: #666;
+            margin-top: 4px;
+            font-size: 0.85rem;
+            font-weight: 300;
         }
 
-        /* Estilo para a seção de input */
+        /* Seção de input */
         #input-section {
             position: absolute;
             top: 150px;
@@ -48,7 +72,6 @@
             transition: opacity 0.3s ease;
         }
 
-        /* Classe para esconder a seção */
         .hidden {
             display: none !important;
         }
@@ -85,70 +108,100 @@
 <body>
 
     <div id="info-container">
-        <p class="text-small">
-            <span id="greeting"></span>, <span id="user-name-display"></span>
-        </p>
-        <p class="text-small" id="date"></p>
+        <div class="greeting-line">
+            <!-- Ícone de saudação (manhã, tarde, noite) -->
+            <img id="greeting-icon" class="icon-inline" src="" alt="" onerror="this.style.display='none'">
+            
+            <p class="text-small">
+                <span id="greeting"></span>, 
+                <span id="user-name-display"></span>
+                <!-- Ícone baseado na letra inicial do nome -->
+                <img id="name-letter-icon" class="icon-inline" src="" alt="" style="display: none;" onerror="this.style.display='none'">
+            </p>
+        </div>
+        <p id="date"></p>
     </div>
 
-    <!-- Seção de input que desaparecerá após salvar -->
     <div id="input-section">
         <input type="text" id="name-input" placeholder="Type your name...">
         <button id="save-btn">save</button>
     </div>
 
     <script>
+        // Letras excluídas conforme solicitado
+        const excludedLetters = ['h', 'q', 'u', 'x', 'w', 'y', 'z'];
+
         function updateInfo() {
             const now = new Date();
             const hours = now.getHours();
             
-            // Lógica da Saudação
+            // 1. Lógica da Saudação e Ícones de Horário
             let greetingMessage = "";
+            let timeIconPath = "";
+
             if (hours >= 5 && hours < 12) {
                 greetingMessage = "good morning";
+                timeIconPath = "images/icon01.png";
             } else if (hours >= 12 && hours < 18) {
                 greetingMessage = "good evening";
+                timeIconPath = "images/icon02.png";
             } else {
                 greetingMessage = "good night";
+                timeIconPath = "images/icon03.png";
             }
+
             document.getElementById('greeting').textContent = greetingMessage;
+            const timeIcon = document.getElementById('greeting-icon');
+            timeIcon.src = timeIconPath;
+            timeIcon.style.display = 'block';
 
-            // Lógica da Data (em inglês)
+            // 2. Lógica da Data
             const options = { day: 'numeric', month: 'long', year: 'numeric' };
-            const dateString = now.toLocaleDateString('en-US', options);
-            document.getElementById('date').textContent = dateString;
+            document.getElementById('date').textContent = now.toLocaleDateString('en-US', options);
 
-            // Carregar nome salvo e decidir se mostra o input
+            // 3. Carregar nome e ícone da letra
             const savedName = localStorage.getItem('greetings_name');
             if (savedName) {
-                document.getElementById('user-name-display').textContent = savedName;
+                renderNameAndIcon(savedName);
                 document.getElementById('input-section').classList.add('hidden');
+            }
+        }
+
+        function renderNameAndIcon(name) {
+            const displaySpan = document.getElementById('user-name-display');
+            const letterIcon = document.getElementById('name-letter-icon');
+            
+            displaySpan.textContent = name;
+            
+            if (name.length > 0) {
+                const firstLetter = name[0].toLowerCase();
+                
+                // Verifica se a letra está no intervalo a-v e não está na lista de excluídas
+                if (firstLetter >= 'a' && firstLetter <= 'v' && !excludedLetters.includes(firstLetter)) {
+                    letterIcon.src = `images/icon_${firstLetter}.png`;
+                    letterIcon.style.display = 'inline-block';
+                } else {
+                    letterIcon.style.display = 'none';
+                }
             }
         }
 
         function saveName() {
             const nameInput = document.getElementById('name-input');
-            const inputSection = document.getElementById('input-section');
             const nameValue = nameInput.value.trim();
             
             if (nameValue) {
                 localStorage.setItem('greetings_name', nameValue);
-                document.getElementById('user-name-display').textContent = nameValue;
-                
-                // Esconde a seção de input permanentemente
-                inputSection.classList.add('hidden');
+                renderNameAndIcon(nameValue);
+                document.getElementById('input-section').classList.add('hidden');
             }
         }
 
-        // Eventos de clique e teclado
         document.getElementById('save-btn').addEventListener('click', saveName);
-        document.getElementById('name-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                saveName();
-            }
+        document.getElementById('name-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') saveName();
         });
 
-        // Inicializa a página
         updateInfo();
     </script>
 </body>
